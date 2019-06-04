@@ -1,0 +1,68 @@
+#!/usr/bin/env sh
+
+DATASET="$1"
+shift
+MODEL="$1"
+shift
+
+for INDIR in "$@";
+do
+    echo "PROCESSING $INDIR"
+
+    ./.colorize ./trajectory.py                 \
+        --batch-size 360                        \
+        imagepairs[files=youtube/$DATASET/*]    \
+        "$MODEL"                                \
+        "$INDIR/checkpoint_*.pth"               \
+        "$INDIR/trajectory.h5"
+
+    ./.colorize ./plot_data.py              \
+        --pca 2                             \
+        --save "$INDIR/plot.pca.png"        \
+        "$INDIR/trajectory.h5"
+
+    ./.colorize ./plot_data.py              \
+        --pca 2                             \
+        --strip 50 500                      \
+        --save "$INDIR/plot.strip.png"      \
+        "$INDIR/trajectory.h5"
+
+    ./.colorize ./vae_trajmodel.py              \
+        "$INDIR/trajectory.h5"                  \
+        "$MODEL"                                \
+        "$INDIR/checkpoint_*.pth"               \
+        plot                                    \
+        --pca 2                                 \
+        --save "$INDIR/plot.trajmodel.png"
+
+    ./.colorize ./vae_trajmodel.py              \
+        "$INDIR/trajectory.h5"                  \
+        "$MODEL"                                \
+        "$INDIR/checkpoint_*.pth"               \
+        render                                  \
+        --save "$INDIR/trajmodel_render.png"
+
+    ./.colorize ./render.py                     \
+        imagepairs[files=youtube/$DATASET/*]    \
+        "$MODEL"                                \
+        "$INDIR/checkpoint_*.pth"               \
+        --save "$INDIR/vae_render.png"
+
+    ./.colorize ./render.py                     \
+        imagepairs[files=youtube/$DATASET/*]    \
+        "$MODEL"                                \
+        "$INDIR/checkpoint_*.pth"               \
+        --random 3                              \
+        --save "$INDIR/vae_render_random.png"
+
+    mkdir -p "$INDIR/frames"
+    ./.colorize ./vae_trajmodel.py              \
+        --steps 300                             \
+        "$INDIR/trajectory.h5"                  \
+        "$MODEL"                                \
+        "$INDIR/checkpoint_*.pth"               \
+        render                                  \
+        --save-frames "$INDIR/frames/fr_{:0>05}.png"
+    ffmpeg -r 30 -f image2 -i "$INDIR/frames/fr_%05d.png" "$INDIR/generated.mp4"
+
+done

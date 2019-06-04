@@ -1,0 +1,29 @@
+#!/bin/bash
+set -e
+
+N="$1"
+
+# Latent space dim:
+LSD=$(( 2 * N ))
+
+OUTDIR="experiments/pendulum-simple/${N}"
+MODEL="simple[a=$LSD,b=116]"
+
+mkdir -p "$OUTDIR"
+echo $MODEL > "$OUTDIR/model"
+
+./.colorize ./train.py                      \
+    --log-to "runs/$OUTDIR"                 \
+    --batch-size 2000                       \
+    --learning-rate "0.005"                 \
+    --epochs 400                            \
+    --test-with "pendulum[n=$N,test]"       \
+    "pendulum[n=$N]"                        \
+    "$MODEL"                                \
+    "$OUTDIR/checkpoint_{epoch:0>5}.pth"
+
+./.colorize ./pendulum_error.py             \
+    pendulum[n=$N,test]                     \
+    "$MODEL"                                \
+    "$OUTDIR/checkpoint_*.pth"    \
+    1 10 50 100 150 200 250 300 350 400 450 500 550 600 650 700 750 800 850 900 950 1000 | tee -a "$OUTDIR/eval.txt"

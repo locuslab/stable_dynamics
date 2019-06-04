@@ -1,0 +1,27 @@
+#!/bin/bash
+
+DATASET="$1"
+LR="0.0005"
+W1="-0.25"
+INNER="PSICNN"
+
+if [ -z "$DATASET" ]; then
+    echo "NO DATASET"
+    exit
+fi
+
+OUTDIR="experiments/vae_simple/${DATASET}"
+mkdir -p "$OUTDIR"
+MODEL="vae_trajectory[w=$W1,projfn=$INNER]"
+
+./.colorize ./train.py                      \
+    --log-to "runs/$OUTDIR"                 \
+    --batch-size 260                        \
+    --learning-rate "$LR"                   \
+    --epochs 100                            \
+    --save-every 1 \
+    imagepairs[files=youtube/$DATASET/*]    \
+    "$MODEL"                                \
+    "$OUTDIR/checkpoint_{epoch:0>5}.pth"
+
+./render_vae "$DATASET" "$MODEL" "$OUTDIR"
