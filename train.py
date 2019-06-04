@@ -39,7 +39,7 @@ def test_model(args, model, test_dataloader, epoch=None, summarywriter=None):
         # Add parts to the summary if needed.
         try:
             args.model.summary(epoch, summarywriter, Ypred, data[0])
-        except AttributeError:
+        except AttributeError as e:
             pass
 
     return sum(loss_parts) / len(test_dataloader.dataset)
