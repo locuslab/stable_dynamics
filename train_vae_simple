@@ -19,7 +19,6 @@ MODEL="vae_trajectory[w=$W1,projfn=$INNER]"
     --batch-size 260                        \
     --learning-rate "$LR"                   \
     --epochs 100                            \
-    --save-every 1 \
     imagepairs[files=youtube/$DATASET/*]    \
     "$MODEL"                                \
     "$OUTDIR/checkpoint_{epoch:0>5}.pth"

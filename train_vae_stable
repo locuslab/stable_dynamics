@@ -1,13 +1,14 @@
 #!/bin/bash
 
+set -e
+
 EXPERIMENT_ID="$1"
 DATASET="$2"
-LR="$3"
-W1="$4"
-W2="$5"
-INNER="$6"
-ALPHA="$7"
-REHU="$8"
+W1="$3"
+W2="$4"
+INNER="$5"
+ALPHA="0.0001"
+REHU="0.001"
 
 if [ -z "$EXPERIMENT_ID" ]; then
     echo "NO EXPERIMENT ID"
@@ -18,7 +19,7 @@ elif [ -z "$DATASET" ]; then
 fi
 
 OUTDIR="experiments/${EXPERIMENT_ID}/${DATASET}_${LR}_${W1}_${W2}_${INNER}_${ALPHA}_${REHU}"
-MODEL="vae_trajectory[stable,w=$W1,bce=$W2,a=$ALPHA,projfn=$INNER,h=320,hp=200,smooth_v=True,rehu=$REHU]"
+MODEL="vae_trajectory[stable,w=$W1,bce=$W2,a=$ALPHA,projfn=$INNER,h=320,hp=200,rehu=$REHU]"
 
 mkdir -p "$OUTDIR"
 echo $MODEL > "$OUTDIR/model"
@@ -26,11 +27,10 @@ echo $MODEL > "$OUTDIR/model"
 ./.colorize ./train.py                      \
     --log-to "runs/$OUTDIR"                 \
     --batch-size 240                        \
-    --learning-rate "$LR"                   \
+    --learning-rate "0.005"                 \
     --epochs 150                            \
     imagepairs[files=youtube/$DATASET/*]    \
     "$MODEL"                                \
     "$OUTDIR/checkpoint_{epoch:0>5}.pth"
 
-./trajectory "$DATASET" "$MODEL" "$OUTDIR"
-./trajectory_model "$DATASET" "$MODEL" "$OUTDIR"
+./render_vae "$DATASET" "$MODEL" "$OUTDIR"
