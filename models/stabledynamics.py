@@ -12,9 +12,8 @@ logger = logging.getLogger(__file__)
 #
 
 # You can use this to compensate for numeric error:
-NUMERIC_ERROR_FIX = 0.0 # 1E-6
 VERIFY = False
-V_SCALE = 0.01 # Size of gradient step to smooth
+V_SCALE = 0.01
 
 global V_WRAP
 V_WRAP = False
@@ -32,19 +31,17 @@ class Dynamics(nn.Module):
 
         Vx = self.V(x)
         gV = torch.autograd.grad([a for a in Vx], [x], create_graph=True, only_inputs=True)[0]
-        gVunit = gV/gV.norm(p=2, dim=1, keepdim=True)
-        # Compute rv
-        rv = fx - gVunit * F.relu((gVunit*fx).sum(dim=1) + self.alpha*Vx[:,0] + NUMERIC_ERROR_FIX)[:,None]
+        rv = fx - gV * (F.relu((gV*fx).sum(dim=1) + self.alpha*Vx[:,0])/(gV**2).sum(dim=1))[:,None]
 
         if VERIFY:
-            # Verify that rv has no positive component along gV
+            # Verify that rv has no positive component along gV.
+            # This helps us catch:
+            #   (1) numeric error in the symbolic gradient calculation, and
+            #   (2) Violation of the Lyapunov function when Euler integration is used.
             verify = (gV * rv).sum(dim=1)
-            num_violation = len([v for v in verify if v > 0])
-            #if num_violation:
-            #    compare = (fx.norm(p=2, dim=1))
-            #    logger.warn(f"Gradient component error: {compare[verify > 0]}; {verify[verify > 0]}")
+            num_violation = len([v for v in verify if v > 0]) # (1)
             new_V = self.V(x + V_SCALE * rv)
-            if (new_V > Vx).any():
+            if (new_V > Vx).any(): # (2)
                 err = sorted([v for v in (new_V - Vx).detach().cpu().numpy().ravel() if v > 0], reverse=True)
                 logger.warn(f"V increased by: {err[:min(5, len(err))]} (total {len(err)}; upward grad {num_violation});")
 
@@ -193,7 +190,7 @@ def configure(props):
         elif props["projfn"] == "PSD":
             V = MakePSD(ICNN([lsd, ph_dim, ph_dim, 1]), lsd, eps=projfn_eps, d=1.0)
         elif props["projfn"] == "PSD-REHU":
-            V = MakePSD(ICNN([lsd, ph_dim, ph_dim, 1], activation=ReHU(float(props["rehu"]) if "rehu" in props else 1.0)), lsd, eps=projfn_eps, d=1.0)
+            V = MakePSD(ICNN([lsd, ph_dim, ph_dim, 1], activation=ReHU(float(props["rehu"]) if "rehu" in props else 0.01)), lsd, eps=projfn_eps, d=1.0)
         elif props["projfn"] == "EndPSICNN":
             V = nn.Sequential(nn.Linear(lsd, ph_dim, bias=False), nn.LeakyReLU(),
                 nn.Linear(ph_dim, lsd, bias=False), nn.LeakyReLU(),

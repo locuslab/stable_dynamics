@@ -8,7 +8,7 @@ W1="$3"
 W2="$4"
 INNER="$5"
 ALPHA="0.0001"
-REHU="0.001"
+REHU="0.0001"
 
 if [ -z "$EXPERIMENT_ID" ]; then
     echo "NO EXPERIMENT ID"
