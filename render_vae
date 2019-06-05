@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 
+set -e
+
 DATASET="$1"
 shift
 MODEL="$1"
