@@ -15,8 +15,9 @@ logger = logging.getLogger(__file__)
 VERIFY = False
 V_SCALE = 0.01
 
-global V_WRAP
+global V_WRAP, SCALE_FX
 V_WRAP = False
+SCALE_FX = False
 
 class Dynamics(nn.Module):
     def __init__(self, fhat, V, alpha=0.01):
@@ -27,7 +28,8 @@ class Dynamics(nn.Module):
 
     def forward(self, x):
         fx = self.fhat(x)
-        # fx = fx / fx.norm(p=2, dim=1, keepdim=True).clamp(min=1.0)
+        if SCALE_FX:
+            fx = fx / fx.norm(p=2, dim=1, keepdim=True).clamp(min=1.0)
 
         Vx = self.V(x)
         gV = torch.autograd.grad([a for a in Vx], [x], create_graph=True, only_inputs=True)[0]
@@ -174,6 +176,10 @@ def configure(props):
     h_dim = int(props["h"]) if "h" in props else 100
     ph_dim = int(props["hp"]) if "hp" in props else 40
     logger.info(f"Set hidden layer size to {h_dim} and hidden layer in projection to {ph_dim}")
+
+    if "scale_fx" in props and props["scale_fx"] not in ["false", "False"]:
+        logger.info(f"Scaling fx to prevent errors from too-large steps in Euler integration")
+        SCALE_FX = True
 
     # The function to learn
     fhat = nn.Sequential(nn.Linear(lsd, h_dim), nn.ReLU(),
