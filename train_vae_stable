@@ -9,6 +9,7 @@ W2="$4"
 INNER="$5"
 ALPHA="0.0001"
 REHU="0.0001"
+SCALE_FX="$6"
 
 if [ -z "$EXPERIMENT_ID" ]; then
     echo "NO EXPERIMENT ID"
@@ -18,8 +19,8 @@ elif [ -z "$DATASET" ]; then
     exit
 fi
 
-OUTDIR="experiments/${EXPERIMENT_ID}/${DATASET}_${W1}_${W2}_${INNER}_${ALPHA}_${REHU}"
-MODEL="vae_trajectory[stable,w=$W1,bce=$W2,a=$ALPHA,projfn=$INNER,h=320,hp=200,rehu=$REHU]"
+OUTDIR="experiments/${EXPERIMENT_ID}/${DATASET}_${W1}_${W2}_${INNER}_${ALPHA}_${REHU}_scaled${SCALE_FX}"
+MODEL="vae_trajectory[stable,w=$W1,bce=$W2,a=$ALPHA,projfn=$INNER,h=320,hp=200,rehu=$REHU,scale_fx=${SCALE_FX}]"
 
 mkdir -p "$OUTDIR"
 echo $MODEL > "$OUTDIR/model"
