@@ -43,8 +43,8 @@ def summary(epoch, summarywriter, Ypred, X):
     Y_a, mu_a, logvar_a, z_a, Y_b, z_b = Ypred
     X_now, X_next = X
     summarywriter.add_embedding(z_a.data, label_img=X_now.data, global_step=epoch, tag="learned_embedding")
-    summarywriter.add_images("current_reconstructed", Y_a, global_step=epoch)
-    summarywriter.add_images("next_reconstructed", Y_b, global_step=epoch)
+    summarywriter.add_images("current_reconstructed", Y_a.clamp(max=1.0), global_step=epoch)
+    summarywriter.add_images("next_reconstructed", Y_b.clamp(max=1.0), global_step=epoch)
 
 def loss_flatten(l):
     return l
