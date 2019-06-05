@@ -18,6 +18,7 @@ MODEL="stabledynamics[latent_space_dim=$LSD,a=$ALPHA,projfn=$INNER,projfn_eps=$I
 mkdir -p "$OUTDIR"
 echo $MODEL > "$OUTDIR/model"
 
+date >> "$OUTDIR/progress.txt"
 ./.colorize ./train.py                      \
     --log-to "runs/$OUTDIR"                 \
     --batch-size 2000                       \
@@ -26,7 +27,7 @@ echo $MODEL > "$OUTDIR/model"
     --test-with "pendulum[n=$N,test]"       \
     "pendulum[n=$N]"                        \
     "$MODEL"                                \
-    "$OUTDIR/checkpoint_{epoch:0>5}.pth"
+    "$OUTDIR/checkpoint_{epoch:0>5}.pth" | tee -a "$OUTDIR/progress.txt"
 
 ./.colorize ./pendulum_error.py             \
     pendulum[n=$N,test]                     \

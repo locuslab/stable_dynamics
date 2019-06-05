@@ -14,13 +14,14 @@ OUTDIR="experiments/vae_simple/${DATASET}"
 mkdir -p "$OUTDIR"
 MODEL="vae_trajectory[w=$W1,projfn=$INNER]"
 
+date >> "$OUTDIR/progress.txt"
 ./.colorize ./train.py                      \
     --log-to "runs/$OUTDIR"                 \
-    --batch-size 260                        \
+    --batch-size 300                        \
     --learning-rate "$LR"                   \
-    --epochs 100                            \
+    --epochs 150                            \
     imagepairs[files=youtube/$DATASET/*]    \
     "$MODEL"                                \
-    "$OUTDIR/checkpoint_{epoch:0>5}.pth"
+    "$OUTDIR/checkpoint_{epoch:0>5}.pth" | tee -a "$OUTDIR/progress.txt"
 
 ./render_vae "$DATASET" "$MODEL" "$OUTDIR"
