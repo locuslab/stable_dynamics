@@ -27,7 +27,7 @@ echo $MODEL > "$OUTDIR/model"
 date >> "$OUTDIR/progress.txt"
 ./.colorize ./train.py                      \
     --log-to "runs/$OUTDIR"                 \
-    --batch-size 300                        \
+    --batch-size 260                        \
     --learning-rate "0.005"                 \
     --epochs 150                            \
     imagepairs[files=youtube/$DATASET/*]    \
