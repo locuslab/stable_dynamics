@@ -18,7 +18,7 @@ elif [ -z "$DATASET" ]; then
     exit
 fi
 
-OUTDIR="experiments/${EXPERIMENT_ID}/${DATASET}_${LR}_${W1}_${W2}_${INNER}_${ALPHA}_${REHU}"
+OUTDIR="experiments/${EXPERIMENT_ID}/${DATASET}_${W1}_${W2}_${INNER}_${ALPHA}_${REHU}"
 MODEL="vae_trajectory[stable,w=$W1,bce=$W2,a=$ALPHA,projfn=$INNER,h=320,hp=200,rehu=$REHU]"
 
 mkdir -p "$OUTDIR"
@@ -28,7 +28,7 @@ date >> "$OUTDIR/progress.txt"
 ./.colorize ./train.py                      \
     --log-to "runs/$OUTDIR"                 \
     --batch-size 300                        \
-    --learning-rate "0.0005"                \
+    --learning-rate "0.0002"                \
     --epochs 150                            \
     imagepairs[files=youtube/$DATASET/*]    \
     "$MODEL"                                \
