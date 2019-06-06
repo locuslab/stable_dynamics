@@ -105,6 +105,8 @@ def main(args):
             for lbl, val in zip(args.model.loss_labels(), test_loss):
                 writer.add_scalar(f'test_loss/{lbl}', val, epoch)
 
+    # Ensure the writer is completed.
+    writer.close()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train a VAE on a set of videos, fine-tune it on a single video, and generate the decoder.')
