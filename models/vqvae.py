@@ -85,13 +85,13 @@ def loss(Ypred, Yactual, X):
     """
     loss, x_recon, perplexity = Ypred
 
-    return loss
+    return (loss, perplexity)
 
 def loss_flatten(x):
-    return [x]
+    return x
 
 def loss_labels():
-    return ("loss",)
+    return ("loss", "perplexity")
 
 def configure(props):
     global model
