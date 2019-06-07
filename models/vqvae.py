@@ -7,16 +7,19 @@ import torch.nn.functional as F
 from torch import nn
 from torch.autograd import Variable
 
-from .ritheshkumar95_vqvae.modules import VQEmbedding, weights_init
+from .aaronvanderood_vqvae.vqvaeimpl import VectorQuantizer, VectorQuantizerEMA
 
 # Implementation from https://github.com/ritheshkumar95/pytorch-vqvae
 
 logger = logging.getLogger(__name__)
 
 class VQVAE(nn.Module):
-    def __init__(self, LATENT_SPACE_DIM=320, K=512):
+    def __init__(self, LATENT_SPACE_DIM=320, K=512, commitment=1.0, decay=0.0):
         super().__init__()
-        self.codebook = VQEmbedding(K, LATENT_SPACE_DIM)
+        if decay:
+            self.codebook = VectorQuantizerEMA(K, LATENT_SPACE_DIM, commitment, decay)
+        else:
+            self.codebook = VectorQuantizer(K, LATENT_SPACE_DIM, commitment)
 
         self.fc_e1 = nn.Conv2d( 3,   8, 9, stride=2)
         self.fc_e2 = nn.Conv2d( 8,  16, 9, stride=2)
@@ -32,8 +35,6 @@ class VQVAE(nn.Module):
         self.fc_d5 = nn.ConvTranspose2d(16,  8, 9, stride=2)
         self.fc_d6 = nn.ConvTranspose2d( 8,  3, 9, stride=2)
 
-        self.apply(weights_init)
-
     def encode(self, x):
         assert list(x.size())[1:] == [3, 240, 320]
         x = F.relu(self.fc_e1(x))
@@ -44,13 +45,9 @@ class VQVAE(nn.Module):
         # x = x.view([x.size()[0], -1])
         # x = self.fc_e6(x)
 
-        logger.info(f"Shape {x.shape}")
-        latents = self.codebook(x)
-        return latents
+        return x
 
-    def decode(self, latents):
-        z = self.codebook.embedding(latents).permute(0, 3, 1, 2)  # (B, D, H, W)
-
+    def decode(self, z):
         nb = z.size()[0]
         # z = self.fc_d1(z)
         z = z.view([nb, 128, 9, 14])
@@ -62,10 +59,10 @@ class VQVAE(nn.Module):
         return z
 
     def forward(self, x):
-        z_e_x = self.encode(x)
-        z_q_x_st, z_q_x = self.codebook.straight_through(z_e_x)
-        x_tilde = self.decode(z_q_x_st)
-        return x_tilde, z_e_x, z_q_x
+        z = self.encode(x)
+        loss, quantized, perplexity, _ = self.codebook(z)
+        x_recon = self.decode(quantized)
+        return loss, x_recon, perplexity
 
 # model is a torch.nn.Module that contains the model definition.
 global model, BETA
@@ -86,18 +83,15 @@ def loss(Ypred, Yactual, X):
         Tuple[nn.Variable] -- Parts of the loss function; the first element is passed to the optimizer
         nn.Variable -- the loss to optimize
     """
-    reconstructed, z_e_x, z_q_x = Ypred
-    # Reconstruction loss
-    loss_recons = F.mse_loss(x_tilde, images)
-    # Vector quantization objective
-    loss_vq = F.mse_loss(z_q_x, z_e_x.detach())
-    # Commitment objective
-    loss_commit = F.mse_loss(z_e_x, z_q_x.detach())
+    loss, x_recon, perplexity = Ypred
 
-    return (loss_recons + loss_vq + BETA * loss_commit, loss_recons, loss_vq, loss_commit)
+    return loss
+
+def loss_flatten(x):
+    return [x]
 
 def loss_labels():
-    return ("loss", "reconstruction", "vector_quantization", "commitment")
+    return ("loss",)
 
 def configure(props):
     global model
@@ -105,7 +99,8 @@ def configure(props):
     # K must be the same as the number of channels in the image.
     K = props["codebook_size"] if "codebook_size" in props else 128
     lsd = props["latent_space_dim"] if "latent_space_dim" in props else 128
-    model = VQVAE(lsd, K)
+    decay = props["ema_decay"] if "ema_decay" in props else 0
+    model = VQVAE(lsd, K, decay=decay)
 
     logger.info(f"Latent space is 1x{lsd}, codebook has {K} entries.")
 
