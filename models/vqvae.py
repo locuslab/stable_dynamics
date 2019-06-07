@@ -1,4 +1,4 @@
- #!/usr/bin/env python3
+#!/usr/bin/env python3
 
 import logging
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class VQVAE(nn.Module):
     def __init__(self, LATENT_SPACE_DIM=320, K=512):
         super().__init__()
-        self.codebook = VQEmbedding(K, dim)
+        self.codebook = VQEmbedding(K, LATENT_SPACE_DIM)
 
         self.fc_e1 = nn.Conv2d( 3,   8, 9, stride=2)
         self.fc_e2 = nn.Conv2d( 8,  16, 9, stride=2)
@@ -41,17 +41,18 @@ class VQVAE(nn.Module):
         x = F.relu(self.fc_e3(x))
         x = F.relu(self.fc_e4(x))
         x = F.relu(self.fc_e5(x))
-        x = x.view([x.size()[0], -1])
-        x = self.fc_e6(x)
+        # x = x.view([x.size()[0], -1])
+        # x = self.fc_e6(x)
 
-        latents = self.codebook(z_e_x)
+        logger.info(f"Shape {x.shape}")
+        latents = self.codebook(x)
         return latents
 
     def decode(self, latents):
         z = self.codebook.embedding(latents).permute(0, 3, 1, 2)  # (B, D, H, W)
 
         nb = z.size()[0]
-        z = self.fc_d1(z)
+        # z = self.fc_d1(z)
         z = z.view([nb, 128, 9, 14])
         z = F.relu(self.fc_d2(z, output_size=[nb, 32, 11, 16]))
         z = F.relu(self.fc_d3(z, output_size=[nb, 32, 25, 35]))
@@ -61,9 +62,9 @@ class VQVAE(nn.Module):
         return z
 
     def forward(self, x):
-        z_e_x = self.encoder(x)
+        z_e_x = self.encode(x)
         z_q_x_st, z_q_x = self.codebook.straight_through(z_e_x)
-        x_tilde = self.decoder(z_q_x_st)
+        x_tilde = self.decode(z_q_x_st)
         return x_tilde, z_e_x, z_q_x
 
 # model is a torch.nn.Module that contains the model definition.
@@ -101,8 +102,9 @@ def loss_labels():
 def configure(props):
     global model
 
-    K = props["codebook_size"] if "codebook_size" in props else 512
-    lsd = props["latent_space_dim"] if "latent_space_dim" in props else 320
+    # K must be the same as the number of channels in the image.
+    K = props["codebook_size"] if "codebook_size" in props else 128
+    lsd = props["latent_space_dim"] if "latent_space_dim" in props else 128
     model = VQVAE(lsd, K)
 
     logger.info(f"Latent space is 1x{lsd}, codebook has {K} entries.")

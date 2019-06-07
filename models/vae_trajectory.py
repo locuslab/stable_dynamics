@@ -7,7 +7,8 @@ from torch import nn
 
 from . import simple as dynmod_simple
 from . import stabledynamics as dynmod_stable
-from . import vae as vaemod
+from . import vae as vaemod_simple
+from . import vqvae as vaemod_vq
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,9 @@ def loss_labels():
 def configure(props):
     dynmod = dynmod_stable if "stable" in props else dynmod_simple
     logger.info(f"Latent space dynamics {dynmod.__file__}")
+
+    vaemod = vaemod_vq if "vqvae" in props else vaemod_simple
+    logger.info(f"Latent space dynamics {vaemod.__file__}")
 
     lsd = int(props["latent_space_dim"]) if "latent_space_dim" in props else 320
     logger.info(f"Set latent space dim to {lsd}")
