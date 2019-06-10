@@ -37,13 +37,20 @@ class VectorQuantizer(nn.Module):
 
         # Quantize and unflatten
         quantized = torch.matmul(encodings, self._embedding.weight).view(input_shape)
-
         quantized = inputs + (quantized - inputs).detach()
+
+        # Perplexity
         avg_probs = torch.mean(encodings, dim=0)
         perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
+        """
+        e_latent_loss = torch.mean((quantized.detach() - inputs)**2)
+        q_latent_loss = torch.mean((quantized - inputs.detach())**2)
+        loss = q_latent_loss + self._commitment_cost * e_latent_loss
+        """
+
         # convert quantized from BHWC -> BCHW
-        return quantized.permute(0, 3, 1, 2).contiguous()
+        return quantized.permute(0, 3, 1, 2).contiguous(), perplexity
 
 class VectorQuantizerEMA(nn.Module):
     def __init__(self, num_embeddings, embedding_dim, decay, epsilon=1e-5):

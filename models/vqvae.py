@@ -26,9 +26,9 @@ class VQVAE(nn.Module):
         self.fc_e3 = nn.Conv2d(16,  32, 5, stride=2)
         self.fc_e4 = nn.Conv2d(32,  64, 5, stride=2)
         self.fc_e5 = nn.Conv2d(64, 128, 3, stride=1)
-        self.fc_e6 = nn.Linear(9*14*128, LATENT_SPACE_DIM)
+#       self.fc_e6 = nn.Linear(9*14*128, LATENT_SPACE_DIM)
 
-        self.fc_d1 = nn.Linear(LATENT_SPACE_DIM, 9*14*128)
+#       self.fc_d1 = nn.Linear(LATENT_SPACE_DIM, 9*14*128)
         self.fc_d2 = nn.ConvTranspose2d(128, 64, 3, stride=1)
         self.fc_d3 = nn.ConvTranspose2d(64, 32, 5, stride=2)
         self.fc_d4 = nn.ConvTranspose2d(32, 16, 5, stride=2)
@@ -61,15 +61,16 @@ class VQVAE(nn.Module):
 
     def forward(self, x):
         z = self.encode(x)
-        quantized = self.codebook(z)
+        quantized, perplexity = self.codebook(z)
         x_recon = self.decode(quantized)
-        return x_recon
+        return x_recon, z, quantized, perplexity
 
 # model is a torch.nn.Module that contains the model definition.
 global model, BETA, COMMITMENT_COST
 model = None
 BETA = 1.0
 COMMITMENT_COST = 1.0
+DATA_VARIANCE = 0.00025 # This is the general range for our datasets
 
 # Use MSE loss as distance from input to output:
 def loss(Ypred, Yactual, X):
@@ -85,24 +86,25 @@ def loss(Ypred, Yactual, X):
         nn.Variable -- the loss to optimize
     """
 
+    x_recon, z, quantized, perplexity = Ypred
+
     #data_variance = (torch.var(X) / X.size(0)).detach()
     #logger.info(f"Batch variance {data_variance}")
-    DATA_VARIANCE = 0.00025 # This is the general range for our datasets
 
     # Loss
-    e_latent_loss = torch.mean((Ypred.detach() - X)**2)
-    q_latent_loss = torch.mean((Ypred - X.detach())**2)
-    recon_loss = torch.mean((Ypred - Yactual)**2)/DATA_VARIANCE
+    e_latent_loss = torch.mean((quantized.detach() - z)**2)
+    q_latent_loss = torch.mean((quantized - z.detach())**2)
+    recon_loss = torch.mean((x_recon - Yactual)**2)/DATA_VARIANCE
 
     loss = recon_loss + q_latent_loss + COMMITMENT_COST * e_latent_loss
 
-    return (loss, recon_loss, e_latent_loss, q_latent_loss)
+    return (loss, recon_loss, e_latent_loss, q_latent_loss, perplexity)
 
 def loss_flatten(x):
     return x
 
 def loss_labels():
-    return ("loss", "reconstruction", "eloss", "qloss")
+    return ("loss", "reconstruction", "eloss", "qloss", "perplexity")
 
 def summary(epoch, summarywriter, Ypred, X):
     loss, x_recon, perplexity = Ypred
