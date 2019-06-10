@@ -61,7 +61,7 @@ class VQVAE(nn.Module):
     def forward(self, x):
         z = self.encode(x)
         loss, quantized, perplexity, _ = self.codebook(z)
-        x_recon = self.decode(quantized)
+        x_recon = self.decode(z)
         return loss, x_recon, perplexity
 
 # model is a torch.nn.Module that contains the model definition.
@@ -70,7 +70,6 @@ model = None
 BETA = 1.0
 
 # Use MSE loss as distance from input to output:
-reconstruction_function = lambda recon_x, x: torch.sum((recon_x - x) ** 2)
 def loss(Ypred, Yactual, X):
     """loss function for learning problem
 
@@ -83,21 +82,30 @@ def loss(Ypred, Yactual, X):
         Tuple[nn.Variable] -- Parts of the loss function; the first element is passed to the optimizer
         nn.Variable -- the loss to optimize
     """
-    loss, x_recon, perplexity = Ypred
+    #data_variance = (torch.var(X) / X.size(0)).detach()
+    #logger.info(f"Batch variance {data_variance}")
+    data_variance = 0.00025 / 10 # This is the general range for our datasets
+    vq_loss, x_recon, perplexity = Ypred
+    recon_error = torch.mean((x_recon - Yactual)**2)/data_variance
+    loss = recon_error + vq_loss
 
-    return (loss, perplexity)
+    return (loss, vq_loss, perplexity)
 
 def loss_flatten(x):
     return x
 
 def loss_labels():
-    return ("loss", "perplexity")
+    return ("loss", "vq", "perplexity")
+
+def summary(epoch, summarywriter, Ypred, X):
+    loss, x_recon, perplexity = Ypred
+    summarywriter.add_images("reconstructed", x_recon, global_step=epoch)
 
 def configure(props):
     global model
 
     # K must be the same as the number of channels in the image.
-    K = props["codebook_size"] if "codebook_size" in props else 128
+    K = props["codebook_size"] if "codebook_size" in props else 512
     lsd = props["latent_space_dim"] if "latent_space_dim" in props else 128
     decay = props["ema_decay"] if "ema_decay" in props else 0
     model = VQVAE(lsd, K, decay=decay)
