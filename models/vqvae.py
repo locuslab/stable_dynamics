@@ -14,12 +14,12 @@ from .aaronvanderood_vqvae.vqvaeimpl import VectorQuantizer, VectorQuantizerEMA
 logger = logging.getLogger(__name__)
 
 class VQVAE(nn.Module):
-    def __init__(self, LATENT_SPACE_DIM=320, K=512, commitment=1.0, decay=0.0):
+    def __init__(self, LATENT_SPACE_DIM=320, K=512, decay=0.0):
         super().__init__()
         if decay:
-            self.codebook = VectorQuantizerEMA(K, LATENT_SPACE_DIM, commitment, decay)
+            self.codebook = VectorQuantizerEMA(K, LATENT_SPACE_DIM, decay)
         else:
-            self.codebook = VectorQuantizer(K, LATENT_SPACE_DIM, commitment)
+            self.codebook = VectorQuantizer(K, LATENT_SPACE_DIM)
 
         self.fc_e1 = nn.Conv2d( 3,   8, 9, stride=2)
         self.fc_e2 = nn.Conv2d( 8,  16, 9, stride=2)
@@ -45,6 +45,7 @@ class VQVAE(nn.Module):
         # x = x.view([x.size()[0], -1])
         # x = self.fc_e6(x)
 
+        logger.info(f"Size of x: {x.size()}")
         return x
 
     def decode(self, z):
@@ -55,19 +56,20 @@ class VQVAE(nn.Module):
         z = F.relu(self.fc_d3(z, output_size=[nb, 32, 25, 35]))
         z = F.relu(self.fc_d4(z, output_size=[nb, 16, 54, 74]))
         z = F.relu(self.fc_d5(z, output_size=[nb,  8, 116, 156]))
-        z = torch.sigmoid(F.relu(self.fc_d6(z, output_size=[nb,  3, 240, 320])))
+        z = torch.sigmoid(self.fc_d6(z, output_size=[nb,  3, 240, 320]))
         return z
 
     def forward(self, x):
         z = self.encode(x)
-        loss, quantized, perplexity, _ = self.codebook(z)
-        x_recon = self.decode(z)
-        return loss, x_recon, perplexity
+        quantized = self.codebook(z)
+        x_recon = self.decode(quantized)
+        return x_recon
 
 # model is a torch.nn.Module that contains the model definition.
-global model, BETA
+global model, BETA, COMMITMENT_COST
 model = None
 BETA = 1.0
+COMMITMENT_COST = 1.0
 
 # Use MSE loss as distance from input to output:
 def loss(Ypred, Yactual, X):
@@ -82,32 +84,38 @@ def loss(Ypred, Yactual, X):
         Tuple[nn.Variable] -- Parts of the loss function; the first element is passed to the optimizer
         nn.Variable -- the loss to optimize
     """
+
     #data_variance = (torch.var(X) / X.size(0)).detach()
     #logger.info(f"Batch variance {data_variance}")
-    data_variance = 0.00025 / 10 # This is the general range for our datasets
-    vq_loss, x_recon, perplexity = Ypred
-    recon_error = torch.mean((x_recon - Yactual)**2)/data_variance
-    loss = recon_error + vq_loss
+    DATA_VARIANCE = 0.00025 # This is the general range for our datasets
 
-    return (loss, vq_loss, perplexity)
+    # Loss
+    e_latent_loss = torch.mean((Ypred.detach() - X)**2)
+    q_latent_loss = torch.mean((Ypred - X.detach())**2)
+    recon_loss = torch.mean((Ypred - Yactual)**2)/DATA_VARIANCE
+
+    loss = recon_loss + q_latent_loss + COMMITMENT_COST * e_latent_loss
+
+    return (loss, recon_loss, e_latent_loss, q_latent_loss)
 
 def loss_flatten(x):
     return x
 
 def loss_labels():
-    return ("loss", "vq", "perplexity")
+    return ("loss", "reconstruction", "eloss", "qloss")
 
 def summary(epoch, summarywriter, Ypred, X):
     loss, x_recon, perplexity = Ypred
     summarywriter.add_images("reconstructed", x_recon, global_step=epoch)
 
 def configure(props):
-    global model
+    global model, COMMITMENT_COST
 
     # K must be the same as the number of channels in the image.
     K = props["codebook_size"] if "codebook_size" in props else 512
     lsd = props["latent_space_dim"] if "latent_space_dim" in props else 128
     decay = props["ema_decay"] if "ema_decay" in props else 0
+    COMMITMENT_COST = props["commitment_cost"] if "commitment_cost" in props else 1.0
     model = VQVAE(lsd, K, decay=decay)
 
     logger.info(f"Latent space is 1x{lsd}, codebook has {K} entries.")
