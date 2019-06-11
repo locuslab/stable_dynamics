@@ -17,9 +17,9 @@ class VQVAE(nn.Module):
     def __init__(self, LATENT_SPACE_DIM=320, K=512, decay=0.0):
         super().__init__()
         if decay:
-            self.codebook = VectorQuantizerEMA(K, LATENT_SPACE_DIM, decay)
+            self.codebook = VectorQuantizerEMA(K, 128, decay)
         else:
-            self.codebook = VectorQuantizer(K, LATENT_SPACE_DIM)
+            self.codebook = VectorQuantizer(K, 128)
 
         self.fc_e1 = nn.Conv2d( 3,   8, 9, stride=2)
         self.fc_e2 = nn.Conv2d( 8,  16, 9, stride=2)
@@ -44,14 +44,12 @@ class VQVAE(nn.Module):
         x = F.relu(self.fc_e5(x))
         # x = x.view([x.size()[0], -1])
         # x = self.fc_e6(x)
-
-        logger.info(f"Size of x: {x.size()}")
         return x
 
     def decode(self, z):
         nb = z.size()[0]
         # z = self.fc_d1(z)
-        z = z.view([nb, 128, 9, 14])
+        # z = z.view([nb, 128, 9, 14])
         z = F.relu(self.fc_d2(z, output_size=[nb, 32, 11, 16]))
         z = F.relu(self.fc_d3(z, output_size=[nb, 32, 25, 35]))
         z = F.relu(self.fc_d4(z, output_size=[nb, 16, 54, 74]))

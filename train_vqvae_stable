@@ -1,0 +1,38 @@
+#!/bin/bash
+
+set -e
+
+EXPERIMENT_ID="$1"
+DATASET="$2"
+W1="$3"
+W2="$4"
+INNER="$5"
+ALPHA="0.0001"
+REHU="0.0001"
+SCALE_FX="$6"
+
+if [ -z "$EXPERIMENT_ID" ]; then
+    echo "NO EXPERIMENT ID"
+    exit
+elif [ -z "$DATASET" ]; then
+    echo "NO DATASET"
+    exit
+fi
+
+OUTDIR="experiments/${EXPERIMENT_ID}/VQVAE_${DATASET}_${W1}_${W2}_${INNER}_${ALPHA}_${REHU}_scaled${SCALE_FX}"
+MODEL="vqvae_trajectory[stable,w=$W1,bce=$W2,a=$ALPHA,projfn=$INNER,h=320,hp=200,rehu=$REHU,scale_fx=${SCALE_FX}]"
+
+mkdir -p "$OUTDIR"
+echo $MODEL > "$OUTDIR/model"
+
+date >> "$OUTDIR/progress.txt"
+./.colorize ./train.py                      \
+    --log-to "runs/$OUTDIR"                 \
+    --batch-size 260                        \
+    --learning-rate "0.0002"                \
+    --epochs 150                            \
+    imagepairs[files=youtube/$DATASET/*]    \
+    "$MODEL"                                \
+    "$OUTDIR/checkpoint_{epoch:0>5}.pth" | tee -a "$OUTDIR/progress.txt"
+
+# ./render_vae "$DATASET" "$MODEL" "$OUTDIR"
