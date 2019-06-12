@@ -106,7 +106,7 @@ def loss_labels():
 
 def summary(epoch, summarywriter, Ypred, X):
     x_recon, z, quantized, perplexity = Ypred
-    summarywriter.add_embedding(z.data, label_img=X.data, global_step=epoch, tag="learned_embedding")
+    # summarywriter.add_embedding(z.data, label_img=X.data, global_step=epoch, tag="learned_embedding")
     summarywriter.add_images("reconstructed", x_recon, global_step=epoch)
 
 def configure(props):

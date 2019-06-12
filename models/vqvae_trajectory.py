@@ -35,7 +35,7 @@ class TrajectoryVQVAE(nn.Module):
         Latent_b = Latent_a + self.dyn(Latent_a)
         Quantized_b = self.from_latent(Latent_b).view(inp_shape)
 
-        Y_a = self.vae.decode(Quantized_a)
+        Y_a = self.vae.decode(self.from_latent(Latent_a).view(inp_shape))
         Y_b = self.vae.decode(Quantized_b)
 
         return (Y_a, Code_a, Quantized_a, Perplexity_a, Latent_a, Y_b, Quantized_b, Latent_b)
