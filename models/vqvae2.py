@@ -35,8 +35,8 @@ class VQVAE(nn.Module):
         self.fc_d2 = nn.ConvTranspose2d(128, 64, 3, stride=1)
         self.fc_d3 = nn.ConvTranspose2d(64, 32, 5, stride=2)
 
-        self.fc_d3_x_top = nn.Conv2d(32,  32, 1, stride=1)
-        self.fc_d3_z = nn.Conv2d(32,  32, 1, stride=1)
+        self.fc_d3_x_top = nn.ConvTranspose2d(32,  32, 1, stride=1)
+        self.fc_d3_z = nn.ConvTranspose2d(32,  32, 1, stride=1)
 
         # Top
         self.fc_d4 = nn.ConvTranspose2d(32, 16, 5, stride=2)
@@ -68,7 +68,7 @@ class VQVAE(nn.Module):
         # Combine
         z_top = z + self.fc_d3_x_top(x_top, output_size=[nb, 32, 25, 35])
         z_top_quantized, perplexity_top = self.codebook_top(z_top)
-        z = z_top_quantized + self.fc_d3_vq(z, output_size=[nb, 32, 25, 35])
+        z = z_top_quantized + self.fc_d3_z(z, output_size=[nb, 32, 25, 35])
 
         z = F.relu(self.fc_d4(z, output_size=[nb, 16, 54, 74]))
         z = F.relu(self.fc_d5(z, output_size=[nb,  8, 116, 156]))
@@ -127,7 +127,7 @@ def loss_labels():
     return ("loss", "recon_loss", "e_top_latent_loss", "e_bottom_latent_loss", "q_top_latent_loss", "q_bottom_latent_loss")
 
 def summary(epoch, summarywriter, Ypred, X):
-    x_recon, z, quantized, perplexity = Ypred
+    x_recon, x_top, z_top, z_top_quantized, x_bottom, z_bottom, z_bottom_quantized = Ypred
     # summarywriter.add_embedding(z.data, label_img=X.data, global_step=epoch, tag="learned_embedding")
     summarywriter.add_images("reconstructed", x_recon, global_step=epoch)
 

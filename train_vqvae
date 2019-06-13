@@ -9,7 +9,7 @@ if [ -z "$DATASET" ]; then
     exit
 fi
 
-OUTDIR="experiments/vqvae2/${DATASET}"
+OUTDIR="experiments/vqvae-2/${DATASET}"
 MODEL="vqvae2[]"
 
 mkdir -p "$OUTDIR"
