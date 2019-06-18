@@ -20,7 +20,7 @@ date >> "$OUTDIR/progress.txt"
     --log-to "runs/$OUTDIR"                 \
     --batch-size 260                        \
     --learning-rate "0.0002"                \
-    --epochs 150                            \
+    --epochs 350                            \
     images[files=youtube/$DATASET/*]        \
     "$MODEL"                                \
     "$OUTDIR/checkpoint_{epoch:0>5}.pth" | tee -a "$OUTDIR/progress.txt"

@@ -35,4 +35,4 @@ date >> "$OUTDIR/progress.txt"
     "$MODEL"                                \
     "$OUTDIR/checkpoint_{epoch:0>5}.pth" | tee -a "$OUTDIR/progress.txt"
 
-# ./render_vae "$DATASET" "$MODEL" "$OUTDIR"
+./render_vae "$DATASET" "$MODEL" "$OUTDIR"
