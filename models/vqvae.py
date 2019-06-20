@@ -109,6 +109,11 @@ def summary(epoch, summarywriter, Ypred, X):
     # summarywriter.add_embedding(z.data, label_img=X.data, global_step=epoch, tag="learned_embedding")
     summarywriter.add_images("reconstructed", x_recon, global_step=epoch)
 
+    Xrandstd = X.std().detach().item()
+    Xrand = torch.normal(mean=torch.zeros_like(X), std=Xrandstd)
+    Ypredrand = model(Xrand.to(Ypred[0]))
+    summarywriter.add_images("random", Ypredrand[0], global_step=epoch)
+
 def configure(props):
     global model, COMMITMENT_COST
 

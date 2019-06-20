@@ -9,8 +9,8 @@ if [ -z "$DATASET" ]; then
     exit
 fi
 
-OUTDIR="experiments/vqvae-2/${DATASET}"
-MODEL="vqvae2[]"
+OUTDIR="experiments/vqvae-random/${DATASET}"
+MODEL="vqvae[]"
 
 mkdir -p "$OUTDIR"
 echo $MODEL > "$OUTDIR/model"

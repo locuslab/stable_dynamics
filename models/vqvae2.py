@@ -126,10 +126,22 @@ def loss_flatten(x):
 def loss_labels():
     return ("loss", "recon_loss", "e_top_latent_loss", "e_bottom_latent_loss", "q_top_latent_loss", "q_bottom_latent_loss")
 
+global last_epoch
+last_epoch = -1
 def summary(epoch, summarywriter, Ypred, X):
+    global last_epoch
+    if epoch <= last_epoch:
+        return
+    last_epoch = epoch
+
     x_recon, x_top, z_top, z_top_quantized, x_bottom, z_bottom, z_bottom_quantized = Ypred
     # summarywriter.add_embedding(z.data, label_img=X.data, global_step=epoch, tag="learned_embedding")
     summarywriter.add_images("reconstructed", x_recon, global_step=epoch)
+
+    Xrandstd = X.std().detach().item()
+    Xrand = torch.normal(mean=torch.zeros_like(X), std=Xrandstd)
+    Ypredrand = model(Xrand.to(Ypred[0]))
+    summarywriter.add_images("random", Ypredrand[0], global_step=epoch)
 
 def configure(props):
     global model, COMMITMENT_COST

@@ -37,10 +37,7 @@ def test_model(args, model, test_dataloader, epoch=None, summarywriter=None):
         loss_parts.append(np.array([l.cpu().item() for l in args.model.loss_flatten(loss)]))
 
         # Add parts to the summary if needed.
-        try:
-            args.model.summary(epoch, summarywriter, Ypred, data[0])
-        except AttributeError as e:
-            pass
+        args.model.summary(epoch, summarywriter, Ypred, data[0])
 
     return sum(loss_parts) / len(test_dataloader.dataset)
 
