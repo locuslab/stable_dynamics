@@ -85,8 +85,9 @@ def pendulum_energy(n=1, lengths=1, masses=1):
     # create functions for numerical calculation
     total_energy = (sum(gpe) + sum(ke)).subs(zip(parameters, parameter_vals))
     total_energy_func = sympy2torch(total_energy)
-    # ODE integration
-    return lambda inp: total_energy_func(**fixvalue(n, inp))
+
+    minimum_energy = total_energy_func(**fixvalue(n, torch.tensor([0.]*2*n)))
+    return lambda inp: total_energy_func(**fixvalue(n, inp)) - minimum_energy
 
 def fixvalue(n, value):
     keys = [f"q{i}_t" for i in range(n)] + [f"u{i}_t" for i in range(n)]
