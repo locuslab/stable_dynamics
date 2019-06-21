@@ -4,6 +4,7 @@ import torch
 from sympy import Dummy, lambdify, srepr, symbols
 from sympy.core.function import AppliedUndef
 from sympy.core.sympify import sympify
+from sympy.core.power import Pow
 from sympy.physics import mechanics
 from sympy.physics.vector import Vector
 from sympy.printing.printer import Printer
@@ -19,7 +20,8 @@ class TorchPrinter(Printer):
         def __inner_sum(**kw):
             x = terms[0](**kw)
             for r in terms[1:]:
-                x = torch.add(x, r(**kw))
+                v = r(**kw)
+                x = torch.add(x, v)
             return x
         return __inner_sum
 
@@ -84,6 +86,15 @@ class TorchPrinter(Printer):
         denom = self._print(denom[0])
         return lambda *kw: torch.div(numer(*kw), denom(*kw))
 
+    def _print_Expr(self, expr):
+        base = self._print(expr.base)
+        exp = self._print(expr.exp)
+        if isinstance(expr, Pow):
+            return lambda **kw: torch.pow(base(**kw), exp(**kw))
+
+        raise NotImplementedError(f"No implementation of Expr {expr}")
+        # return lambda **kw: kw[expr.name]
+
 def sympy2torch(expr):
     return TorchPrinter()._print(expr)
 
@@ -100,6 +111,7 @@ def test_sympy2torch():
     test("Add(Integer(2), Symbol('y'))", "xy", [([0, 0], 2), ([1, 0], 2), ([2, 2], 4), ([2, 1], 3)])
     test("Mul(Add(Integer(2), Symbol('y')), Symbol('x'))", "xy", [([0, 0], 0), ([1, 0], 2), ([2, 0], 4), ([2, 1], 6)])
     test("Mul(Integer(-1), Float('9.8100000000000005', precision=53), sin(Function('q0')(Symbol('t'))))", ["q0_t"], [([0.], 0), ([np.pi/2], -9.81), ([np.pi/6], -9.81*0.5), ([np.pi/4], -9.81*(0.5**0.5))])
+    test("Symbol('t')**2", "t", [([0.], 0), ([-2.], 4), ([2.], 4)])
 
     print("Completed!")
 
