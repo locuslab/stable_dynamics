@@ -36,7 +36,7 @@ def main(args):
         logger.info(f"Generating trajectories for {cache_path}")
         # Initialize args.number initial positions:
         X_gen = np.zeros((args.number, 2 * n)).astype(np.float32)
-        X_gen[:,:] = (np.random.rand(X_gen.shape[0], 2*n).astype(np.float32) - 0.5) * np.pi/4 # Pick values in range [-pi/4, pi/4] radians, radians/sec
+        X_gen[:,:] = (np.random.rand(X_gen.shape[0], 2*n).astype(np.float32) - 0.5) * np.pi # Pick values in range [-pi/2, pi/2] radians, radians/sec
 
         X_phy = [X_gen]
 
@@ -89,7 +89,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Error of .')
-    parser.add_argument('--number', type=int, default=500, help="number of starting positions to evaluate from")
+    parser.add_argument('--number', type=int, default=2000, help="number of starting positions to evaluate from")
     parser.add_argument('--timestep', type=float, default=0.01, help="duration of each timestep")
 
     parser.add_argument('data', type=DynamicLoad("datasets"), help='the pendulum dataset to load the simulator from')
