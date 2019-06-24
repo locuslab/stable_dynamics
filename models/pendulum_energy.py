@@ -8,7 +8,10 @@ from sympy.physics import mechanics
 from sympy.physics.vector import Vector
 from sympy.printing.printer import Printer
 
-from sympy2torch import sympy2torch
+from . import sympy2torch
+
+import logging
+logger = logging.getLogger(__name__)
 
 def pendulum_energy(n=1, lengths=1, masses=1):
     # Generalized coordinates and velocities
@@ -84,37 +87,35 @@ def pendulum_energy(n=1, lengths=1, masses=1):
 
     # create functions for numerical calculation
     total_energy = (sum(gpe) + sum(ke)).subs(zip(parameters, parameter_vals))
-    total_energy_func = sympy2torch(total_energy)
+    total_energy_func = sympy2torch.sympy2torch(total_energy)
 
-    minimum_energy = total_energy_func(**fixvalue(n, torch.tensor([0.]*2*n)))
-    return lambda inp: total_energy_func(**fixvalue(n, inp)) - minimum_energy
+    minimum_energy = total_energy_func(**fixvalue(n, torch.tensor([[0.]*2*n])))
+    return lambda inp: (total_energy_func(**fixvalue(n, inp)) - minimum_energy.to(inp)).unsqueeze(1)
 
 def fixvalue(n, value):
     keys = [f"q{i}_t" for i in range(n)] + [f"u{i}_t" for i in range(n)]
     rv = {}
     for i in range(2*n):
-        if isinstance(value, np.ndarray):
-            rv[keys[i]] = value[:,i]
-        else:
+        if isinstance(value, list):
             rv[keys[i]] = value[i]
+        else:
+            rv[keys[i]] = value[:,i]
     return rv
 
 if __name__ == "__main__":
-    # Test sympy2torch:
     n = 2
     efunc = pendulum_energy(n)
 
     # Test this!
-    print(efunc(torch.tensor([0., 0., 0., 0.])))
-    print(efunc(torch.tensor([ np.pi/2,  np.pi/2, 0., 0.])))
-    print(efunc(torch.tensor([-np.pi/2, -np.pi/2, 0., 0.])))
-    print(efunc(torch.tensor([ np.pi  ,  np.pi  , 0., 0.])))
+    print(efunc(torch.tensor([[0., 0., 0., 0.]])))
+    print(efunc(torch.tensor([[ np.pi/2,  np.pi/2, 0., 0.]])))
+    print(efunc(torch.tensor([[-np.pi/2, -np.pi/2, 0., 0.]])))
+    print(efunc(torch.tensor([[ np.pi  ,  np.pi  , 0., 0.]])))
 
-    print(efunc(torch.tensor([0., 0., 1., 0.])))
-    print(efunc(torch.tensor([0., 0., -1., 0.])))
-
-    print(efunc(torch.tensor([0., 0., 1., 1.])))
-    print(efunc(torch.tensor([0., 0., -1., -1.])))
+    print(efunc(torch.tensor([[0., 0., 1., 0.]])))
+    print(efunc(torch.tensor([[0., 0., -1., 0.]])))
+    print(efunc(torch.tensor([[0., 0., 1., 1.]])))
+    print(efunc(torch.tensor([[0., 0., -1., -1.]])))
 
     # assert pendulum_energy([0., 0. ])
 

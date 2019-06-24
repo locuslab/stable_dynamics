@@ -36,7 +36,7 @@ def main(args):
         logger.info(f"Generating trajectories for {cache_path}")
         # Initialize args.number initial positions:
         X_gen = np.zeros((args.number, 2 * n)).astype(np.float32)
-        X_gen[:,:n] = (np.random.rand(X_gen.shape[0], n).astype(np.float32) - 0.5) * np.pi/2 # Pick values in range [-pi/4, pi/4] radians, radians/sec
+        X_gen[:,:] = (np.random.rand(X_gen.shape[0], 2*n).astype(np.float32) - 0.5) * np.pi/4 # Pick values in range [-pi/4, pi/4] radians, radians/sec
 
         X_phy = [X_gen]
 
@@ -76,7 +76,7 @@ def main(args):
         while np.any(ang_error < -np.pi):
             ang_error[ang_error < -np.pi] += 2*np.pi
 
-        ang_error = np.sum(ang_error)**2
+        ang_error = np.sum(ang_error**2)
 
         errors.append((vel_error + ang_error)**0.5)
 

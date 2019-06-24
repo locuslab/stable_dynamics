@@ -4,6 +4,7 @@ import math
 import torch
 import torch.nn.functional as F
 from torch import nn
+from . import pendulum_energy
 
 logger = logging.getLogger(__file__)
 
@@ -168,6 +169,9 @@ def loss_flatten(l):
 def loss_labels():
     return ["loss", "l2", "V"]
 
+def summary(*a, **kw):
+    pass
+
 def configure(props):
     logger.info(props)
     lsd = int(props["latent_space_dim"])
@@ -188,6 +192,7 @@ def configure(props):
 
     ## The convex function to project onto:
     projfn_eps = float(props["projfn_eps"]) if "projfn_eps" in props else 0.01
+    pendulum_n =   int(props["pendulum_n"]) if "pendulum_n" in props else None
     if "projfn" in props:
         if props["projfn"] == "PSICNN":
             V = PosDefICNN([lsd, ph_dim, ph_dim, 1], eps=projfn_eps, negative_slope=0.3)
@@ -206,10 +211,12 @@ def configure(props):
                     nn.Linear(lsd, ph_dim,), nn.ReLU(),
                     nn.Linear(ph_dim, ph_dim), nn.ReLU(),
                     nn.Linear(ph_dim, 1))
+        elif props["projfn"] == "ActualPendulumEnergy":
+            V = pendulum_energy.pendulum_energy(n=pendulum_n)
         else:
             logger.error(f"Projected function {props['projfn']} does not exist")
 
-    logger.info(f"Set Lyapunov function to {V} with param {projfn_eps}")
+    logger.info(f"Set Lyapunov function to {V} with param eps={projfn_eps}, n={pendulum_n}")
 
     alpha = float(props["a"]) if "a" in props else 0.01
     logger.info(f"Set alpha to {alpha}")

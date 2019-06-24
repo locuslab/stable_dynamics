@@ -1,0 +1,10 @@
+./train_pendulum_stable_knownV knownv-test 1 0.001 ActualPendulumEnergy NO_EPSILON 0 0.05
+./train_pendulum_stable_knownV knownv-test 2 0.001 ActualPendulumEnergy NO_EPSILON 0 0.05
+./train_pendulum_stable_knownV knownv-test 3 0.001 ActualPendulumEnergy NO_EPSILON 0 0.05
+./train_pendulum_stable_knownV knownv-test 4 0.001 ActualPendulumEnergy NO_EPSILON 0 0.05
+./train_pendulum_stable_knownV knownv-test 5 0.001 ActualPendulumEnergy NO_EPSILON 0 0.05
+./train_pendulum_stable_knownV knownv-test 6 0.001 ActualPendulumEnergy NO_EPSILON 0 0.05
+./train_pendulum_stable_knownV knownv-test 7 0.001 ActualPendulumEnergy NO_EPSILON 0 0.05
+./train_pendulum_stable_knownV knownv-test 8 0.001 ActualPendulumEnergy NO_EPSILON 0 0.05
+./train_pendulum_stable_knownV knownv-test 9 0.001 ActualPendulumEnergy NO_EPSILON 0 0.05
+./train_pendulum_stable_knownV knownv-test 10 0.001 ActualPendulumEnergy NO_EPSILON 0 0.05
