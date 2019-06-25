@@ -17,7 +17,7 @@ date >> "$OUTDIR/progress.txt"
     --log-to "runs/$OUTDIR"                 \
     --batch-size 2000                       \
     --learning-rate "0.005"                 \
-    --epochs 500                            \
+    --epochs 1000                           \
     --test-with "pendulum[n=$N,test]"       \
     "pendulum[n=$N]"                        \
     "$MODEL"                                \
