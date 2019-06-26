@@ -26,7 +26,7 @@ class TorchPrinter(Printer):
         return __inner_sum
 
     def _print_Function(self, expr):
-        __FUNCTION_MAP = { "sin": torch.sin, "cos": torch.cos, "tan": torch.tan }
+        __FUNCTION_MAP = { "sin": torch.sin, "cos": torch.cos, "tan": torch.tan, "Abs": torch.abs }
 
         if expr.func.__name__ in __FUNCTION_MAP:
             func = __FUNCTION_MAP[expr.func.__name__]

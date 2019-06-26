@@ -8,12 +8,15 @@ from sympy.physics import mechanics
 from sympy.physics.vector import Vector
 from sympy.printing.printer import Printer
 
-from . import sympy2torch
+try:
+    import sympy2torch
+except ImportError:
+    from . import sympy2torch
 
 import logging
 logger = logging.getLogger(__name__)
 
-def pendulum_energy(n=1, lengths=1, masses=1):
+def pendulum_energy(n=1, lengths=1, masses=1, include_gpe=True, include_ke=True):
     # Generalized coordinates and velocities
     # (in this case, angular positions & velocities of each mass) 
     q = mechanics.dynamicsymbols('q:{0}'.format(n))
@@ -86,10 +89,15 @@ def pendulum_energy(n=1, lengths=1, masses=1):
     unknown_dict = dict(zip(q + u, unknowns))
 
     # create functions for numerical calculation
-    total_energy = (sum(gpe) + sum(ke)).subs(zip(parameters, parameter_vals))
+    total_energy = 0
+    if include_gpe:
+        total_energy += (sum(gpe)).subs(zip(parameters, parameter_vals))
+    if include_ke:
+        total_energy += (sum( ke)).subs(zip(parameters, parameter_vals))
+
     total_energy_func = sympy2torch.sympy2torch(total_energy)
 
-    minimum_energy = total_energy_func(**fixvalue(n, torch.tensor([[0.]*2*n])))
+    minimum_energy = total_energy_func(**fixvalue(n, torch.tensor([[0.]*2*n]))).detach()
     return lambda inp: (total_energy_func(**fixvalue(n, inp)) - minimum_energy.to(inp)).unsqueeze(1)
 
 def fixvalue(n, value):
@@ -112,12 +120,17 @@ if __name__ == "__main__":
     print(efunc(torch.tensor([[-np.pi/2, -np.pi/2, 0., 0.]])))
     print(efunc(torch.tensor([[ np.pi  ,  np.pi  , 0., 0.]])))
 
-    print(efunc(torch.tensor([[0., 0., 1., 0.]])))
-    print(efunc(torch.tensor([[0., 0., -1., 0.]])))
-    print(efunc(torch.tensor([[0., 0., 1., 1.]])))
+    print()
+
+    print(efunc(torch.tensor([[0., 0.,  1.,  0.]])))
+    print(efunc(torch.tensor([[0., 0., -1.,  0.]])))
+    print(efunc(torch.tensor([[0., 0.,  1.,  1.]])))
     print(efunc(torch.tensor([[0., 0., -1., -1.]])))
 
-    # assert pendulum_energy([0., 0. ])
+    print()
 
-    # q0(t)) + g*m1*(-l0*sin(q0(t)) - l1*sin(q1(t)))
-    # l0**2*m0*u0(t)**2/2 + l0**2*m1*u0(t)**2/2 + l0*l1*m1*(sin(q0(t))*sin(q1(t)) + cos(q0(t))*cos(q1(t)))*u0(t)*u1(t) + l1**2*m1*u1(t)**2/2
+    print(efunc(torch.tensor([[ np.pi/2,       0, 0., 0.]])))
+    print(efunc(torch.tensor([[ np.pi/2,       0, .1, 0.]])))
+    print(efunc(torch.tensor([[       0, np.pi/2, 0., 0.]])))
+    print(efunc(torch.tensor([[ np.pi/96, np.pi/2, 0., 0.]])))
+    print(efunc(torch.tensor([[-np.pi/96, np.pi/2, 0., 0.]])))

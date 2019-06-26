@@ -12,6 +12,8 @@ from torchvision.utils import save_image
 from util import (DynamicLoad, latest_file, loadDataFile, setup_logging,
                   to_variable)
 
+from models import pendulum_energy
+
 from pathlib import Path
 
 logger = setup_logging(os.path.basename(__file__))
@@ -32,11 +34,14 @@ def main(args):
 
     cache_path = Path("pendulum-cache") / f"p-physics-{n}.npy"
 
+    # Energy functions
+    energy = pendulum_energy.pendulum_energy(n)
+
     if not cache_path.exists():
         logger.info(f"Generating trajectories for {cache_path}")
         # Initialize args.number initial positions:
         X_gen = np.zeros((args.number, 2 * n)).astype(np.float32)
-        X_gen[:,:] = (np.random.rand(X_gen.shape[0], 2*n).astype(np.float32) - 0.5) * np.pi/2 # Pick values in range [-pi/2, pi/2] radians, radians/sec
+        X_gen[:,:] = (np.random.rand(X_gen.shape[0], 2*n).astype(np.float32) - 0.5) * np.pi/2 # Pick values in range [-pi/4, pi/4] radians, radians/sec
 
         X_phy = [X_gen]
 
@@ -45,6 +50,8 @@ def main(args):
             X_gen = redim(X_gen + args.timestep * physics(X_gen))
             assert not np.any(np.isnan(X_gen))
             X_phy.append(X_gen)
+
+            logger.warn((i, energy(torch.tensor(X_gen))))
 
         X_phy = np.array(X_phy)
         np.save(cache_path, X_phy)
