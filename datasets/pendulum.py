@@ -95,7 +95,11 @@ def pendulum_gradient(n, lengths=None, masses=1, friction=0.3):
     fo_func = lambdify(unknowns + parameters, fo_sym)
 
     # function which computes the derivatives of parameters
-    def gradient(y):
+    def gradient(y, *a, **kw):
+        squeeze = False
+        if len(y.shape) == 1:
+            squeeze = True
+            y = np.expand_dims(y, 0)
         rv = np.zeros_like(y)
 
         for i in range(y.shape[0]):
@@ -106,6 +110,8 @@ def pendulum_gradient(n, lengths=None, masses=1, friction=0.3):
             sol = np.linalg.solve(mm_func(*vals), fo_func(*vals))
             rv[i,:] = np.array(sol).T[0]
 
+        if squeeze:
+            return rv[0,...]
         return rv
 
     # ODE integration

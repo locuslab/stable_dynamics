@@ -13,7 +13,7 @@ mkdir -p "$OUTDIR"
 echo $MODEL > "$OUTDIR/model"
 
 date >> "$OUTDIR/progress.txt"
-echo ./.colorize ./train.py                      \
+./.colorize ./train.py                      \
     --log-to "runs/$OUTDIR"                 \
     --batch-size 2000                       \
     --learning-rate "0.005"                 \
