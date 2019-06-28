@@ -68,7 +68,7 @@ def pendulum_energy(n=1, lengths=1, masses=1, include_gpe=True, include_ke=True)
         # cartPos += l[i] * q[i]
         pos = Pi.pos_from(Origin)
 
-        ke.append(Pai.kinetic_energy(A))
+        ke.append(1/n * Pai.kinetic_energy(A))
         gpe.append(m[i] * g * (Pi.pos_from(Origin) & gravity_direction))
 
         P = Pi
