@@ -66,7 +66,7 @@ def main(args):
         rv = model(to_variable(torch.tensor(inp, dtype=torch.float32), cuda=torch.cuda.is_available())).detach().cpu().numpy()
         return rv.flatten()
 
-    errors = np.zeros((len(times) + 1,))
+    errors = np.zeros((len(times),))
     for i in range(args.number):
         logger.info(f"Trajectory {i}")
 
@@ -85,7 +85,7 @@ def main(args):
         errors[:] += (vel_error + ang_error)**0.5
 
     for i in args.steps:
-        print(f"{i}\t{np.sum(errors[0:i])}\t{errors[i]}")
+        print(f"{i}\t{np.sum(errors[0:i-1])}\t{errors[i-1]}")
 
 
 
