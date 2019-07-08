@@ -88,11 +88,9 @@ def main(args):
         print(f"{i}\t{np.sum(errors[0:i-1])}\t{errors[i-1]}")
 
 
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Error of .')
-    parser.add_argument('--number', type=int, default=200, help="number of starting positions to evaluate from")
+    parser.add_argument('--number', type=int, default=1000, help="number of starting positions to evaluate from")
     parser.add_argument('--timestep', type=float, default=0.01, help="duration of each timestep")
 
     parser.add_argument('data', type=DynamicLoad("datasets"), help='the pendulum dataset to load the simulator from')
