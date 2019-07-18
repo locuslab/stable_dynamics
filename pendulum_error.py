@@ -9,8 +9,7 @@ import numpy as np
 import torch
 from plot_data import plot_data, plot_data_args
 from torchvision.utils import save_image
-from util import (DynamicLoad, latest_file, loadDataFile, setup_logging,
-                  to_variable)
+from util import (DynamicLoad, latest_file, loadDataFile, setup_logging, to_variable)
 from scipy.integrate import odeint
 
 from models import pendulum_energy
@@ -30,7 +29,7 @@ def main(args):
     physics = args.data._pendulum_gen
     n = args.data._n
     redim = args.data._redim
-    times = args.timestep * np.arange(0, max(args.steps)).astype(np.float32)
+    h = args.timestep
 
     logger.info(f"Loaded physics simulator for {n}-link pendulum")
 
@@ -43,14 +42,18 @@ def main(args):
         logger.info(f"Generating trajectories for {cache_path}")
         # Initialize args.number initial positions:
         X_init = np.zeros((args.number, 2 * n)).astype(np.float32)
-        X_init[:,:] = (np.random.rand(args.number, 2*n).astype(np.float32) - 0.5) * np.pi/2 # Pick values in range [-pi/4, pi/4] radians, radians/sec
+        X_init[:,:] = (np.random.rand(args.number, 2*n).astype(np.float32) - 0.5) * np.pi/4 # Pick values in range [-pi/8, pi/8] radians, radians/sec
 
-        X_phy = np.zeros((len(times), *X_init.shape), dtype=np.float32)
-        for i in range(args.number):
-            logger.info(f"Trajectory {i}")
-            traj = odeint(physics, X_init[i,...], times)
-            X_phy[:,i,:] = traj
-            assert not np.any(np.isnan(traj))
+        X_phy = np.zeros((args.steps, *X_init.shape), dtype=np.float32)
+        X_phy[0,...] = X_init
+        for i in range(1, args.steps):
+            logger.info(f"Timestep {i}")
+            k1 = h * physics(X_phy[i-1,...])
+            k2 = h * physics(X_phy[i-1,...] + k1/2)
+            k3 = h * physics(X_phy[i-1,...] + k2/2)
+            k4 = h * physics(X_phy[i-1,...] + k3)
+            X_phy[i,...] = X_phy[i-1,...] + 1/6*(k1 + 2*k2 + 2*k3 + k4)
+            assert not np.any(np.isnan(X_phy[i,...]))
 
         np.save(cache_path, X_phy)
         logger.info(f"Done generating trajectories for {cache_path}")
@@ -59,33 +62,36 @@ def main(args):
         X_phy = np.load(cache_path).astype(np.float32)
         logger.info(f"Loaded trajectories from {cache_path}")
 
-    # Copy the initial states for NN:
-    X_nn = np.zeros((len(times), args.number, 2 * n), np.float32)
-    def model_wrapped(inp, *a, **kw):
-        inp = np.reshape(inp, (1, -1))
-        rv = model(to_variable(torch.tensor(inp, dtype=torch.float32), cuda=torch.cuda.is_available())).detach().cpu().numpy()
-        return rv.flatten()
+    X_nn = to_variable(torch.tensor(X_phy[0,:,:]), cuda=torch.cuda.is_available())
+    errors = np.zeros((args.steps,))
+    for i in range(1, args.steps):
+        X_nn.requires_grad = True
+        k1 = h * model(X_nn)
+        k1 = k1.detach()
+        k2 = h * model(X_nn + k1/2)
+        k2 = k2.detach()
+        k3 = h * model(X_nn + k2/2)
+        k3 = k3.detach()
+        k4 = h * model(X_nn + k3)
+        k4 = k4.detach()
+        X_nn = X_nn + 1/6*(k1 + 2*k2 + 2*k3 + k4)
+        X_nn = X_nn.detach()
 
-    errors = np.zeros((len(times),))
-    for i in range(args.number):
-        logger.info(f"Trajectory {i}")
-
-        traj = odeint(model_wrapped, X_phy[0,i,:].astype(np.float32), times)
-        X_nn[:,i,:] = traj
-
+        logger.info(f"Timestep {i}")
+        y = X_nn.cpu().numpy()
         # TODO: Update error calculation
-        vel_error = np.sum((X_phy[:,i,n:] - X_nn[:,i,n:])**2, axis=1)
-        ang_error = (X_phy[:,i,:n] - X_nn[:,i,:n])
+        vel_error = np.sum((X_phy[i,:,n:] - y[:,n:])**2)
+        ang_error = (X_phy[i,:,:n] - y[:,:n])
         while np.any(ang_error >= np.pi):
             ang_error[ang_error >= np.pi] -= 2*np.pi
         while np.any(ang_error < -np.pi):
             ang_error[ang_error < -np.pi] += 2*np.pi
 
-        ang_error = np.sum(ang_error**2, axis=1)
-        errors[:] += (vel_error + ang_error)**0.5
+        ang_error = np.sum(ang_error**2)
+        errors[i] = (vel_error + ang_error)
 
-    for i in args.steps:
-        print(f"{i}\t{np.sum(errors[0:i-1])}\t{errors[i-1]}")
+    for i in range(args.steps):
+        print(f"{i}\t{np.sum(errors[0:i])}\t{errors[i]}")
 
 
 if __name__ == "__main__":
@@ -96,6 +102,6 @@ if __name__ == "__main__":
     parser.add_argument('data', type=DynamicLoad("datasets"), help='the pendulum dataset to load the simulator from')
     parser.add_argument('model', type=DynamicLoad("models"), help='model to load')
     parser.add_argument('weight', type=latest_file, help='model weight to load')
-    parser.add_argument('steps', type=int, nargs="+", help="number of steps to evaluate over")
+    parser.add_argument('steps', type=int, help="number of steps to evaluate over")
 
     main(parser.parse_args())

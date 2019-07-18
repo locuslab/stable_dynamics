@@ -12,3 +12,4 @@
 ./train_pendulum_stable stable 2 0.001 PSD-REHU 0.001 0 0.005
 ./train_pendulum_stable stable 4 0.001 PSD-REHU 0.001 0 0.005
 ./train_pendulum_stable stable 6 0.001 PSD-REHU 0.001 0 0.005
+./train_pendulum_stable stable 8 0.001 PSD-REHU 0.001 0 0.005
