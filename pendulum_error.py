@@ -42,7 +42,7 @@ def main(args):
         logger.info(f"Generating trajectories for {cache_path}")
         # Initialize args.number initial positions:
         X_init = np.zeros((args.number, 2 * n)).astype(np.float32)
-        X_init[:,:] = (np.random.rand(args.number, 2*n).astype(np.float32) - 0.5) * np.pi # Pick values in range [-pi/2, pi/2] radians, radians/sec
+        X_init[:,:] = (np.random.rand(args.number, 2*n).astype(np.float32) - 0.5) * np.pi/4 # Pick values in range [-pi/8, pi/8] radians, radians/sec
 
         X_phy = np.zeros((args.steps, *X_init.shape), dtype=np.float32)
         X_phy[0,...] = X_init
