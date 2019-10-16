@@ -22,7 +22,7 @@ date >> "$OUTDIR/progress.txt"
 ./.colorize ./train.py                      \
     --log-to "runs/$OUTDIR"                 \
     --batch-size 2000                       \
-    --learning-rate "0.0001"                \
+    --learning-rate "0.001"                 \
     --epochs 1000                           \
     --test-with "pendulum[n=$N,test]"       \
     "pendulum[n=$N]"                        \
