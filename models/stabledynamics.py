@@ -202,6 +202,12 @@ def configure(props):
             V = MakePSD(ICNN([lsd, ph_dim, ph_dim, 1]), lsd, eps=projfn_eps, d=1.0)
         elif props["projfn"] == "PSD-REHU":
             V = MakePSD(ICNN([lsd, ph_dim, ph_dim, 1], activation=ReHU(float(props["rehu"]) if "rehu" in props else 0.01)), lsd, eps=projfn_eps, d=1.0)
+        elif props["projfn"] == "NN-REHU":
+            nn.Sequential(
+                    nn.Linear(lsd, ph_dim,), nn.ReLU(),
+                    nn.Linear(ph_dim, ph_dim), nn.ReLU(),
+                    nn.Linear(ph_dim, 1), ReHU(float(props["rehu"]) if "rehu" in props else 0.01))
+
         elif props["projfn"] == "EndPSICNN":
             V = nn.Sequential(nn.Linear(lsd, ph_dim, bias=False), nn.LeakyReLU(),
                 nn.Linear(ph_dim, lsd, bias=False), nn.LeakyReLU(),
