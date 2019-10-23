@@ -1,14 +1,14 @@
 #!/bin/bash
 
-for ALPHA in 0.001
+for ALPHA in 0.01 0.001
 do
 for INNER_EPSILON in 0.01 0.005
 do
 for SMOOTH_V in 0
 do
-for REHU in 0.05 0.001
+for REHU in 0.05 0.001 0.0001
 do
-./train_pendulum_stable stable 1 "$ALPHA" NN-REHU "$INNER_EPSILON" "$SMOOTH_V" "$REHU" &
+./train_pendulum_stable stable 2 "$ALPHA" NN-REHU "$INNER_EPSILON" "$SMOOTH_V" "$REHU" &
 done
 wait
 done

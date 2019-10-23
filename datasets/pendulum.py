@@ -144,7 +144,7 @@ def _redim(inp):
     vec[:,:n] = pos
     return vec
 
-NUM_EXAMPLES = lambda n: 1000 * n
+NUM_EXAMPLES = lambda n: 200 * n
 def build(props):
     # Number of joints in the pendulum:
     n = int(props["n"]) if "n" in props else 1
