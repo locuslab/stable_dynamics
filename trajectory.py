@@ -40,11 +40,13 @@ def main(args):
 
         # z = model(img)
         # Break the abstraction here:
-        Y_a, mu_a, logvar_a, z_a, Y_b, z_b = model(img)
+        # Y_a, mu_a, logvar_a, z_a, Y_b, z_b = model(img)
+        (Y_a, Code_a, Quantized_a, Perplexity_a, Latent_a, Y_b, Quantized_b, Latent_b) = model(img)
         if args.mu:
             z = mu_a
         else:
-            z = z_a
+            # z = z_a
+            z = Latent_a
 
         trajectory.append(z.cpu().data.numpy())
 

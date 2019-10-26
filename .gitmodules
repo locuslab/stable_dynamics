@@ -1,0 +1,3 @@
+[submodule "models/ritheshkumar95_vqvae"]
+	path = models/ritheshkumar95_vqvae
+	url = git@github.com:ritheshkumar95/pytorch-vqvae.git

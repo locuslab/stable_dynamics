@@ -1,0 +1,16 @@
+./train_pendulum_stable_knownV knownv 1 0.001 ActualPendulumEnergy NO_EPSILON 0 0.05
+./train_pendulum_stable_knownV knownv 2 0.001 ActualPendulumEnergy NO_EPSILON 0 0.05
+./train_pendulum_stable_knownV knownv 4 0.001 ActualPendulumEnergy NO_EPSILON 0 0.05
+./train_pendulum_stable_knownV knownv 6 0.001 ActualPendulumEnergy NO_EPSILON 0 0.05
+
+./train_pendulum_simple 1
+./train_pendulum_simple 2
+./train_pendulum_simple 4
+./train_pendulum_simple 6
+./train_pendulum_simple 8
+
+./train_pendulum_stable stable 1 0.001 PSD-REHU 0.001 0 0.005
+./train_pendulum_stable stable 2 0.001 PSD-REHU 0.001 0 0.005
+./train_pendulum_stable stable 4 0.001 PSD-REHU 0.001 0 0.005
+./train_pendulum_stable stable 6 0.001 PSD-REHU 0.001 0 0.005
+./train_pendulum_stable stable 8 0.001 PSD-REHU 0.001 0 0.005

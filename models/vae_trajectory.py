@@ -55,6 +55,7 @@ def loss_labels():
 def configure(props):
     dynmod = dynmod_stable if "stable" in props else dynmod_simple
     logger.info(f"Latent space dynamics {dynmod.__file__}")
+    logger.info(f"Latent space dynamics {vaemod.__file__}")
 
     lsd = int(props["latent_space_dim"]) if "latent_space_dim" in props else 320
     logger.info(f"Set latent space dim to {lsd}")

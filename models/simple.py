@@ -22,6 +22,9 @@ def loss_flatten(l):
 def loss_labels():
     return ["loss"]
 
+def summary(*a, **kw):
+    pass
+
 def configure(props):
     global SIZE_A, SIZE_B, model
     if "a" in props:

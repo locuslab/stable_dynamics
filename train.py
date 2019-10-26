@@ -37,10 +37,7 @@ def test_model(args, model, test_dataloader, epoch=None, summarywriter=None):
         loss_parts.append(np.array([l.cpu().item() for l in args.model.loss_flatten(loss)]))
 
         # Add parts to the summary if needed.
-        try:
-            args.model.summary(epoch, summarywriter, Ypred, data[0])
-        except AttributeError as e:
-            pass
+        args.model.summary(epoch, summarywriter, Ypred, data[0])
 
     return sum(loss_parts) / len(test_dataloader.dataset)
 
@@ -120,7 +117,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch-size', type=int, default=256, help='batch size')
     parser.add_argument('--learning-rate', type=float, default=1e-3, help='learning rate')
     parser.add_argument('--epochs', type=int, default=120, help='number of epochs to run')
-    parser.add_argument('--save-every', type=int, default=10, help='save after this many epochs')
+    parser.add_argument('--save-every', type=int, default=100, help='save after this many epochs')
     parser.set_defaults(func=main)
 
     try:
