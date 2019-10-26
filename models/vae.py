@@ -49,13 +49,14 @@ class VAE(nn.Module):
 
     def decode(self, z):
         nb = z.size()[0]
-        z = torch.sigmoid(self.fc_d1(z))
+        z = self.fc_d1(z)
         z = z.view([nb, 128, 9, 14])
         z = F.relu(self.fc_d2(z, output_size=[nb, 32, 11, 16]))
         z = F.relu(self.fc_d3(z, output_size=[nb, 32, 25, 35]))
         z = F.relu(self.fc_d4(z, output_size=[nb, 16, 54, 74]))
         z = F.relu(self.fc_d5(z, output_size=[nb,  8, 116, 156]))
         z = F.relu(self.fc_d6(z, output_size=[nb,  3, 240, 320]))
+        z = torch.sigmoid(z)
         return z
 
     def forward(self, x):
